@@ -69,9 +69,6 @@ stages:
                arguments: '--configuration $(buildConfiguration)'
 
   - stage: deploy
-    pool: 
-     vmImage: windows-latest
-     environment: 'env'
     jobs:
       - job: deploy
         steps: 
@@ -118,25 +115,26 @@ stages:
              workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
              commandOptions: '-auto-approve'
              environmentServiceNameAzureRM: 'serviceconn1'
-
         
   - stage: deployApp
-    pool: 
-     vmImage: windows-latest
     jobs:
-      - job: deployApp
-        steps: 
-         - task: DownloadBuildArtifacts@1
-           inputs:
-             buildType: 'current'
-             downloadType: 'single'
-             artifactName: 'drop'
-             downloadPath: '$(System.ArtifactsDirectory)'
-                     
-         - task: AzureRmWebAppDeployment@4
-           inputs:
-             ConnectionType: 'AzureRM'
-             azureSubscription: 'serviceconn1'
-             appType: 'webApp'
-             WebAppName: '$(appname)'
-             packageForLinux: '$(System.ArtifactsDirectory)/**/*.zip'
+    - deployment: Deploy
+      environment: 'env'
+      strategy:
+       runOnce:
+        deploy:
+          steps:
+           - task: DownloadBuildArtifacts@1
+             inputs:
+               buildType: 'current'
+               downloadType: 'single'
+               artifactName: 'drop'
+               downloadPath: '$(System.ArtifactsDirectory)'
+          
+           - task: AzureRmWebAppDeployment@4
+             inputs:
+               ConnectionType: 'AzureRM'
+               azureSubscription: 'serviceconn1'
+               appType: 'webApp'
+               WebAppName: '$(appname)'
+               packageForLinux: '$(System.ArtifactsDirectory)/**/*.zip'
