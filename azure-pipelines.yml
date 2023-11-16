@@ -6,6 +6,12 @@
 trigger:
 - none
 
+parameters:
+  - name: actionToPerform
+    displayName: "Deploy/Destroy"
+    type: string
+    default: Deploy
+    values: [Deploy , Destroy]
 pool:
   vmImage: 'windows-latest'
 
@@ -69,8 +75,9 @@ stages:
                arguments: '--configuration $(buildConfiguration)'
 
   - stage: deploy
+    condition: eq('${{ parameters.actionToPerform }}', 'Deploy')
     jobs:
-      - job: deploy
+      - job: deployTF
         steps: 
          - task: DownloadBuildArtifacts@1
            inputs:
@@ -138,3 +145,33 @@ stages:
                appType: 'webApp'
                WebAppName: '$(appname)'
                packageForLinux: '$(System.ArtifactsDirectory)/**/*.zip'
+
+  - stage: destroy
+    condition: eq('${{ parameters.actionToPerform}}', 'Destroy')            
+    jobs:
+      - job: 
+        steps: 
+        - task: ms-devlabs.custom-terraform-tasks.custom-terraform-installer-task.TerraformInstaller@1  
+          inputs:
+            terraformVersion: 'latest' 
+
+        - task: TerraformTaskV4@4
+          inputs:
+           provider: 'azurerm'
+           command: 'init'
+           workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+           backendServiceArm: 'serviceconn1'
+           backendAzureRmResourceGroupName: 'Paritala'
+           backendAzureRmStorageAccountName: 'casestudy3sa'
+           backendAzureRmContainerName: 'newcon1'
+           backendAzureRmKey: 'terraform.tfstate'
+       
+        - task: TerraformTaskV4@4
+          inputs:
+            provider: 'azurerm'
+            command: 'destroy'
+            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+            environmentServiceNameAzureRM: 'serviceconn1'
+          
+
+         
