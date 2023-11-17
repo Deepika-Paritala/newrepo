@@ -7,7 +7,7 @@ terraform {
   }
   backend "azurerm" {
     resource_group_name  = "Paritala"
-    storage_account_name = "casestudy3sa"
+    storage_account_name = "ctl2sa"
     container_name       = "newcon1"
     key                  = "terraform.tfstate"
   }
